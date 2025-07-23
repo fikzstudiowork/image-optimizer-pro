@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Optimizer Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.0/FileSaver.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .file-input-label:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .tab-btn.active { border-color: #4f46e5; background-color: #eef2ff; color: #4f46e5; }
+        .feature-tab.active { border-color: #10b981; color: #10b981; background-color: #f0fdfa; }
+        #activity-log-content::-webkit-scrollbar, #admin-activity-log::-webkit-scrollbar { width: 6px; }
+        #activity-log-content::-webkit-scrollbar-track, #admin-activity-log::-webkit-scrollbar-track { background: #f1f5f9; }
+        #activity-log-content::-webkit-scrollbar-thumb, #admin-activity-log::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        #activity-log-content::-webkit-scrollbar-thumb:hover, #admin-activity-log::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] { -moz-appearance: textfield; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Authentication Section -->
+    <div id="auth-section" class="min-h-screen flex items-center justify-center p-4">
+        <div class="w-full max-w-md">
+            <div id="login-form" class="">
+                <div class="bg-white p-8 rounded-2xl shadow-lg text-center">
+                    <h2 class="text-3xl font-bold mb-2 text-gray-900">Welcome Back!</h2>
+                    <p class="text-gray-500 mb-6">Log in to continue to Image Optimizer Pro.</p>
+                    <input id="login-email" type="text" placeholder="Email or Username" class="w-full p-3 mb-4 bg-gray-100 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input id="login-password" type="password" placeholder="Password" class="w-full p-3 mb-4 bg-gray-100 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <button id="login-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-lg transition-transform transform hover:scale-105">Login</button>
+                    <p class="mt-6 text-sm text-gray-600">Don't have an account? <a href="#" id="show-signup" class="text-indigo-600 hover:underline font-semibold">Sign Up</a></p>
+                </div>
+            </div>
+
+            <div id="signup-form" class="hidden">
+                 <div class="bg-white p-8 rounded-2xl shadow-lg text-center">
+                    <h2 class="text-3xl font-bold mb-2 text-gray-900">Create Account</h2>
+                    <p class="text-gray-500 mb-6">Get your 100 free image processing credits!</p>
+                    <input id="signup-name" type="text" placeholder="Full Name" class="w-full p-3 mb-4 bg-gray-100 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input id="signup-email" type="email" placeholder="Email" class="w-full p-3 mb-4 bg-gray-100 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input id="signup-password" type="password" placeholder="Password" class="w-full p-3 mb-4 bg-gray-100 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <button id="signup-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-lg transition-transform transform hover:scale-105">Sign Up</button>
+                    <p class="mt-6 text-sm text-gray-600">Already have an account? <a href="#" id="show-login" class="text-indigo-600 hover:underline font-semibold">Log In</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Section (Initially Hidden) -->
+    <div id="app-section" class="hidden">
+        <div class="max-w-screen-2xl mx-auto p-4 md:p-8">
+            <header class="text-center mb-8">
+                <div class="flex justify-between items-center">
+                    <div id="user-info" class="text-left"></div>
+                    <h1 class="text-4xl md:text-5xl font-bold text-gray-900">Image Optimizer Pro</h1>
+                    <button id="logout-btn" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg">Logout</button>
+                </div>
+            </header>
+
+            <div class="flex flex-col lg:flex-row gap-8">
+                <!-- Main Content -->
+                <main class="w-full lg:w-2/3">
+                    <!-- Main View Tabs -->
+                    <div class="mb-6 border-b border-gray-200">
+                        <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                            <button id="tab-workspace" class="tab-btn active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg">Workspace</button>
+                            <button id="tab-library" class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg text-gray-500 hover:text-gray-700">Media Library</button>
+                            <button id="tab-admin" class="tab-btn hidden whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg text-gray-500 hover:text-gray-700">Admin Dashboard</button>
+                        </nav>
+                    </div>
+
+                    <!-- Workspace Panel -->
+                    <div id="panel-workspace">
+                        <div id="upload-section" class="mb-8">
+                            <label for="image-input" class="file-input-label transition-all ease-in-out cursor-pointer w-full flex flex-col items-center justify-center border-4 border-dashed border-gray-300 hover:border-indigo-500 bg-white rounded-2xl p-10 text-center">
+                                <svg class="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-4-4V7a4 4 0 014-4h10a4 4 0 014 4v5a4 4 0 01-4 4h-2m-6-4l3 3m0 0l3-3m-3 3V4"></path></svg>
+                                <h2 class="text-2xl font-semibold text-gray-700">Drag & Drop or Click to Upload</h2>
+                                <p class="text-gray-500">Select up to 100 images at once</p>
+                            </label>
+                            <input type="file" id="image-input" multiple accept="image/jpeg, image/png, image/webp" class="hidden">
+                        </div>
+
+                        <div id="controls-section" class="hidden bg-white p-6 rounded-2xl shadow-md mb-8">
+                             <div class="border-b border-gray-200 mb-6">
+                                <nav class="-mb-px flex space-x-4" aria-label="Feature Tabs">
+                                    <button data-tab="compress" class="feature-tab active whitespace-nowrap pb-4 px-1 border-b-2 font-semibold">Compress & Convert</button>
+                                    <button data-tab="scale" class="feature-tab whitespace-nowrap pb-4 px-1 border-b-2 font-semibold text-gray-500 hover:text-gray-700">Scale by Ratio</button>
+                                </nav>
+                            </div>
+                            <div id="feature-panels">
+                                <div id="panel-compress" class="feature-panel">
+                                    <div class="grid md:grid-cols-2 gap-6 items-start">
+                                        <div>
+                                            <h3 class="text-xl font-semibold mb-3">Format &amp; Quality Settings</h3>
+                                            <div class="flex items-center space-x-4 mb-4">
+                                                <label for="format-select" class="font-medium">Output Format:</label>
+                                                <select id="format-select" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5">
+                                                    <option value="image/jpeg">JPEG</option>
+                                                    <option value="image/webp">WEBP</option>
+                                                    <option value="image/png">PNG</option>
+                                                </select>
+                                            </div>
+                                            <div id="quality-control" class="flex items-center space-x-4">
+                                                <label for="quality" class="font-medium">Quality:</label>
+                                                <input type="range" id="quality" min="0" max="100" value="80" class="w-full">
+                                                <span id="quality-value" class="font-bold text-indigo-600 w-12 text-center">80%</span>
+                                            </div>
+                                            <div class="mt-3">
+                                                <button id="recommended-settings-btn" class="text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-1 px-3 rounded-lg transition-colors">Apply Recommended</button>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center justify-end h-full">
+                                            <button id="compress-btn" class="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105" disabled>Convert &amp; Compress</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="panel-scale" class="feature-panel hidden">
+                                    <div class="grid md:grid-cols-2 gap-6 items-start">
+                                        <div>
+                                            <h3 class="text-xl font-semibold mb-3">Aspect Ratio Scaling</h3>
+                                            <div class="flex items-center space-x-4 mb-4">
+                                                <label for="ratio-select" class="font-medium">Aspect Ratio:</label>
+                                                <select id="ratio-select" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5">
+                                                    <option value="1/1">1:1 (Square)</option>
+                                                    <option value="16/9">16:9 (Widescreen)</option>
+                                                    <option value="9/16">9:16 (Story)</option>
+                                                    <option value="4/3">4:3 (Standard)</option>
+                                                    <option value="3/4">3:4 (Portrait)</option>
+                                                    <option value="3/2">3:2 (Photography)</option>
+                                                </select>
+                                            </div>
+                                            <div class="flex items-center space-x-4">
+                                                <label for="max-dimension-input" class="font-medium">Max Dimension (px):</label>
+                                                <input type="number" id="max-dimension-input" value="1080" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5">
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center justify-end h-full">
+                                            <button id="scale-btn" class="w-full md:w-auto bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105" disabled>Scale Images</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="image-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"></div>
+
+                        <div id="workspace-actions" class="text-center mt-8 hidden">
+                            <button id="download-all-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-lg shadow-xl transition-transform transform hover:scale-105 text-lg mr-4">Download All as ZIP</button>
+                            <button id="clear-workspace-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-4 px-8 rounded-lg shadow-xl transition-transform transform hover:scale-105 text-lg">Clear Workspace</button>
+                        </div>
+                    </div>
+
+                    <!-- Media Library Panel -->
+                    <div id="panel-library" class="hidden">
+                         <div class="flex justify-between items-center mb-4">
+                            <p class="text-gray-600">Showing previously processed images (up to 30).</p>
+                            <button id="clear-history-btn" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg text-sm">Clear History</button>
+                        </div>
+                        <div id="library-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                            <p id="library-empty-msg" class="text-gray-500 col-span-full text-center py-10">Your media library is empty. Process some images to see them here.</p>
+                        </div>
+                    </div>
+
+                    <!-- Admin Dashboard Panel -->
+                    <div id="panel-admin" class="hidden bg-white p-6 rounded-2xl shadow-md space-y-8">
+                        <div>
+                            <h2 class="text-2xl font-bold mb-4">User Credit Distribution</h2>
+                            <canvas id="admin-chart"></canvas>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold mb-4">User Management</h2>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Password</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Credits</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Refill</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Danger Zone</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="admin-user-list" class="bg-white divide-y divide-gray-200">
+                                        <!-- User rows will be injected here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold mb-4">Global Activity Log</h2>
+                            <div id="admin-activity-log" class="h-64 overflow-y-auto border rounded-lg p-4 bg-gray-50 text-sm space-y-2"></div>
+                        </div>
+                    </div>
+                </main>
+
+                <!-- Sidebar -->
+                <aside class="w-full lg:w-1/3 space-y-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-md h-full lg:h-[600px] flex flex-col">
+                        <h2 class="text-2xl font-bold mb-4 border-b pb-2">My Activity Log</h2>
+                        <div id="activity-log-content" class="flex-grow overflow-y-auto space-y-3 pr-2"></div>
+                    </div>
+                    <div id="stats-dashboard" class="bg-white p-6 rounded-2xl shadow-md">
+                         <h2 class="text-2xl font-bold mb-4 border-b pb-2">Live Stats</h2>
+                         <div class="grid grid-cols-2 gap-4 text-center">
+                            <div>
+                                <p class="text-3xl font-bold text-indigo-600" id="stats-total-users">0</p>
+                                <p class="text-sm text-gray-500">Total Users</p>
+                            </div>
+                             <div>
+                                <p class="text-3xl font-bold text-teal-600" id="stats-user-credits">0</p>
+                                <p class="text-sm text-gray-500">Your Credits</p>
+                            </div>
+                         </div>
+                         <div class="mt-4 text-center border-t pt-4">
+                            <p class="text-sm text-gray-500">Logged in as</p>
+                            <p class="font-semibold text-gray-800" id="stats-current-user">-</p>
+                         </div>
+                    </div>
+                </aside>
+            </div>
+            <footer class="text-center mt-12 py-4 border-t text-gray-500">
+                <p>&copy; 2025 Developed by <a href="https://github.com/fikzstudiowork" target="_blank" class="text-indigo-600 hover:underline font-semibold">fikzdev</a>.</p>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Main Message Modal -->
+    <div id="message-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-sm text-center">
+            <h3 id="modal-title" class="text-2xl font-bold mb-4"></h3>
+            <p id="modal-message" class="text-gray-600 mb-6"></p>
+            <button id="modal-close-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg">OK</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- State & Config ---
+            let imageFiles = [];
+            let localDb;
+            let currentUser = null;
+            let adminChart = null;
+            const DB_NAME_PREFIX = 'ImageOptimizerDB_';
+            const STORE_NAME = 'ImageHistory';
+            const MAX_HISTORY = 30;
+            const MAX_LOG_ENTRIES = 15;
+            const STARTING_CREDITS = 100;
+            const ADMIN_USERNAME = "fikz1819";
+            const ADMIN_PASSWORD = "fikz1819";
+
+            // --- UI & Logic Functions ---
+            function logActivity(message, type = 'info') {
+                const time = new Date().toLocaleTimeString();
+                const logEntry = { time, message, type, user: currentUser ? currentUser.email : 'System' };
+                
+                let globalLogs = JSON.parse(localStorage.getItem('globalLogs')) || [];
+                globalLogs.unshift(logEntry);
+                globalLogs = globalLogs.slice(0, 50);
+                localStorage.setItem('globalLogs', JSON.stringify(globalLogs));
+
+                if (currentUser) {
+                    let userLogs = JSON.parse(localStorage.getItem(`logs_${currentUser.email}`)) || [];
+                    userLogs.unshift(logEntry);
+                    userLogs = userLogs.slice(0, MAX_LOG_ENTRIES);
+                    localStorage.setItem(`logs_${currentUser.email}`, JSON.stringify(userLogs));
+                }
+                
+                displayLogs();
+            }
+            
+            function displayLogs() {
+                const activityLogContent = document.getElementById('activity-log-content');
+                if (!activityLogContent) return;
+                activityLogContent.innerHTML = '';
+                let logsToShow = [];
+                if (currentUser) {
+                    logsToShow = JSON.parse(localStorage.getItem(`logs_${currentUser.email}`)) || [];
+                }
+                
+                logsToShow.forEach(log => {
+                    const entry = document.createElement('div');
+                    let color = 'text-gray-600';
+                    if (log.type === 'error') color = 'text-red-500';
+                    if (log.type === 'success') color = 'text-green-600';
+                    entry.innerHTML = `<p class="text-sm ${color}"><span class="font-semibold">${log.time}:</span> ${log.message}</p>`;
+                    activityLogContent.appendChild(entry);
+                });
+            }
+
+            function showMessage(title, message) {
+                const modalTitle = document.getElementById('modal-title');
+                const modalMessage = document.getElementById('modal-message');
+                const messageModal = document.getElementById('message-modal');
+                modalTitle.textContent = title;
+                modalMessage.textContent = message;
+                messageModal.classList.remove('hidden');
+            }
+
+            // --- Local Storage User Management ---
+            function getUsers() {
+                return JSON.parse(localStorage.getItem('users')) || [];
+            }
+
+            function saveUsers(users) {
+                localStorage.setItem('users', JSON.stringify(users));
+            }
+
+            function getCurrentUser() {
+                const userEmail = sessionStorage.getItem('currentUserEmail');
+                if (!userEmail) return null;
+                if (userEmail === ADMIN_USERNAME) { 
+                    return { name: 'fikz1819 (Admin)', email: ADMIN_USERNAME, password: ADMIN_PASSWORD, role: 'admin', credits: Infinity };
+                }
+                const users = getUsers();
+                return users.find(u => u.email === userEmail);
+            }
+
+            function setCurrentUser(user) {
+                const authSection = document.getElementById('auth-section');
+                const appSection = document.getElementById('app-section');
+                const tabAdmin = document.getElementById('tab-admin');
+                
+                sessionStorage.setItem('currentUserEmail', user.email);
+                currentUser = user;
+                updateUserInfo();
+                updateStatsDashboard();
+                displayLogs();
+                if (user.role === 'admin') {
+                    tabAdmin.classList.remove('hidden');
+                } else {
+                    tabAdmin.classList.add('hidden');
+                }
+                authSection.classList.add('hidden');
+                appSection.classList.remove('hidden');
+                initDB();
+                logActivity(`Logged in as ${user.email}.`, 'success');
+            }
+
+            function updateUserInfo() {
+                const userInfo = document.getElementById('user-info');
+                if (currentUser) {
+                    const creditText = currentUser.role === 'admin' ? 'Unlimited' : currentUser.credits;
+                    userInfo.innerHTML = `<p class="font-semibold">${currentUser.name}</p><p class="text-sm text-indigo-600 font-bold">Credits: ${creditText}</p>`;
+                }
+            }
+
+            function updateStatsDashboard() {
+                const statsTotalUsers = document.getElementById('stats-total-users');
+                const statsUserCredits = document.getElementById('stats-user-credits');
+                const statsCurrentUser = document.getElementById('stats-current-user');
+
+                statsTotalUsers.textContent = getUsers().length;
+                if (currentUser) {
+                    statsCurrentUser.textContent = currentUser.name;
+                    statsUserCredits.textContent = currentUser.role === 'admin' ? '∞' : currentUser.credits;
+                }
+            }
+            
+            // --- Core App Logic ---
+            async function processImages(mode) {
+                const compressBtn = document.getElementById('compress-btn');
+                const scaleBtn = document.getElementById('scale-btn');
+                const imagesToProcessCount = imageFiles.filter(f => !f.processed).length;
+                
+                if (currentUser.role !== 'admin' && imagesToProcessCount > currentUser.credits) {
+                    showMessage('Insufficient Credits', `You need ${imagesToProcessCount} credits but only have ${currentUser.credits}.`);
+                    logActivity(`Processing failed: Insufficient credits.`, 'error');
+                    return;
+                }
+
+                compressBtn.disabled = true;
+                scaleBtn.disabled = true;
+                logActivity(`Starting bulk ${mode} process for ${imageFiles.length} images.`);
+
+                let creditsUsed = 0;
+                for (const fileWithId of imageFiles) {
+                    const card = document.getElementById(fileWithId.id);
+                    const progressContainer = card.querySelector('.progress-container');
+                    const progressBar = card.querySelector('.progress-bar');
+                    progressContainer.classList.remove('hidden');
+
+                    try {
+                        let resultBlob;
+                        let label = '';
+                        
+                        if (mode === 'compress') {
+                            const format = document.getElementById('format-select').value;
+                            const quality = parseInt(document.getElementById('quality').value) / 100;
+                            label = `Converted (${format.split('/')[1].toUpperCase()})`;
+                            resultBlob = await convertAndCompressImage(fileWithId.file, format, quality, (p) => progressBar.style.width = `${p}%`);
+                        } else if (mode === 'scale') {
+                            const ratio = eval(document.getElementById('ratio-select').value);
+                            const maxDim = parseInt(document.getElementById('max-dimension-input').value);
+                            label = `Scaled (${document.getElementById('ratio-select').options[document.getElementById('ratio-select').selectedIndex].text})`;
+                            resultBlob = await scaleImage(fileWithId.file, ratio, maxDim, (p) => progressBar.style.width = `${p}%`);
+                        }
+                        
+                        updateCardForResult(card, fileWithId, resultBlob, label);
+                        fileWithId.file = new File([resultBlob], fileWithId.file.name, { type: resultBlob.type });
+                        fileWithId.processedData = resultBlob;
+                        saveToLibrary({ name: fileWithId.file.name, originalSize: fileWithId.originalSize, newSize: resultBlob.size, blob: resultBlob, timestamp: new Date() });
+                        if (currentUser.role !== 'admin' && !fileWithId.processed) {
+                            creditsUsed++;
+                        }
+                        fileWithId.processed = true;
+                    } catch (error) {
+                        console.error('Error processing image:', error);
+                        logActivity(`Error processing ${fileWithId.file.name}: ${error.message}`, 'error');
+                        const resultInfo = card.querySelector('.result-info');
+                        resultInfo.textContent = `Error: ${error.message}`;
+                        resultInfo.classList.remove('hidden', 'text-green-600');
+                        resultInfo.classList.add('text-red-600');
+                        progressBar.style.width = '100%';
+                        progressBar.classList.add('bg-red-500');
+                    }
+                }
+
+                if (currentUser.role !== 'admin') {
+                    currentUser.credits -= creditsUsed;
+                    const users = getUsers();
+                    const userIndex = users.findIndex(u => u.email === currentUser.email);
+                    if (userIndex !== -1) {
+                        users[userIndex] = currentUser;
+                        saveUsers(users);
+                    }
+                    updateUserInfo();
+                    updateStatsDashboard();
+                }
+
+                compressBtn.disabled = false;
+                scaleBtn.disabled = false;
+                logActivity(`Bulk processing complete. Used ${creditsUsed} credits.`);
+            }
+            
+            // --- Image Processing Implementations ---
+            function convertAndCompressImage(file, format, quality, onProgress) {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.src = URL.createObjectURL(file);
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        onProgress(50);
+                        canvas.toBlob((blob) => { onProgress(100); resolve(blob); }, format, quality);
+                    };
+                    img.onerror = reject;
+                });
+            }
+            
+            function scaleImage(file, targetRatio, maxDimension, onProgress) {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.src = URL.createObjectURL(file);
+                    img.onload = () => {
+                        onProgress(30);
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        let sx, sy, sWidth, sHeight;
+                        const imgRatio = img.width / img.height;
+
+                        if (imgRatio > targetRatio) {
+                            sHeight = img.height;
+                            sWidth = sHeight * targetRatio;
+                            sx = (img.width - sWidth) / 2;
+                            sy = 0;
+                        } else {
+                            sWidth = img.width;
+                            sHeight = sWidth / targetRatio;
+                            sx = 0;
+                            sy = (img.height - sHeight) / 2;
+                        }
+                        
+                        let outputWidth, outputHeight;
+                        if (targetRatio >= 1) {
+                            outputWidth = maxDimension;
+                            outputHeight = maxDimension / targetRatio;
+                        } else {
+                            outputHeight = maxDimension;
+                            outputWidth = maxDimension * targetRatio;
+                        }
+
+                        canvas.width = outputWidth;
+                        canvas.height = outputHeight;
+                        
+                        onProgress(60);
+                        ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, outputWidth, outputHeight);
+                        onProgress(80);
+                        canvas.toBlob(blob => {
+                            onProgress(100);
+                            resolve(blob);
+                        }, 'image/jpeg', 0.9);
+                    };
+                    img.onerror = reject;
+                });
+            }
+
+            // --- File & Workspace Management ---
+            function handleFiles(files) {
+                const controlsSection = document.getElementById('controls-section');
+                const workspaceActions = document.getElementById('workspace-actions');
+                const compressBtn = document.getElementById('compress-btn');
+                const scaleBtn = document.getElementById('scale-btn');
+                
+                if (files.length === 0) return;
+                if (imageFiles.length + files.length > 100) {
+                    showMessage('Limit Exceeded', 'You can select a maximum of 100 images.');
+                    logActivity(`Upload failed: attempted to exceed 100 image limit.`, 'error');
+                    return;
+                }
+                logActivity(`Uploading ${files.length} image(s).`);
+                for (const file of files) {
+                    if (!file.type.startsWith('image/')) continue;
+                    const fileWithId = { id: `img-${Date.now()}-${Math.random()}`, file, originalSize: file.size, processed: false, processedData: null };
+                    imageFiles.push(fileWithId);
+                    createImageCard(fileWithId);
+                }
+                if (imageFiles.length > 0) {
+                    controlsSection.classList.remove('hidden');
+                    workspaceActions.classList.remove('hidden');
+                    compressBtn.disabled = false;
+                    scaleBtn.disabled = false;
+                }
+            }
+            function clearWorkspace() {
+                const imageGrid = document.getElementById('image-grid');
+                const controlsSection = document.getElementById('controls-section');
+                const workspaceActions = document.getElementById('workspace-actions');
+                const compressBtn = document.getElementById('compress-btn');
+                const scaleBtn = document.getElementById('scale-btn');
+                const imageInput = document.getElementById('image-input');
+                
+                imageFiles = [];
+                imageGrid.innerHTML = '';
+                controlsSection.classList.add('hidden');
+                workspaceActions.classList.add('hidden');
+                compressBtn.disabled = true;
+                scaleBtn.disabled = true;
+                imageInput.value = '';
+                logActivity('Workspace cleared.');
+            }
+
+            // --- Local Database (IndexedDB) ---
+            function initDB() {
+                if (!currentUser) return;
+                const request = indexedDB.open(DB_NAME_PREFIX + currentUser.email, 1);
+                request.onerror = (event) => logActivity('Error initializing database.', 'error');
+                request.onsuccess = (event) => {
+                    localDb = event.target.result;
+                    logActivity('Local media database initialized successfully.');
+                    loadLibrary();
+                };
+                request.onupgradeneeded = (event) => {
+                    let db = event.target.result;
+                    let store = db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+                    store.createIndex('timestamp', 'timestamp', { unique: false });
+                };
+            }
+            function saveToLibrary(item) {
+                if (!localDb) return;
+                const transaction = localDb.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.add(item);
+                request.onsuccess = () => {
+                    logActivity(`Saved "${item.name}" to library.`);
+                    trimLibrary();
+                };
+                request.onerror = (event) => logActivity(`Error saving "${item.name}" to library.`, 'error');
+            }
+            function trimLibrary() {
+                const transaction = localDb.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const index = store.index('timestamp');
+                index.count().onsuccess = (event) => {
+                    const count = event.target.result;
+                    if (count > MAX_HISTORY) {
+                        const cursorReq = index.openCursor();
+                        let toDelete = count - MAX_HISTORY;
+                        cursorReq.onsuccess = e => {
+                            const cursor = e.target.result;
+                            if (cursor && toDelete > 0) {
+                                store.delete(cursor.primaryKey);
+                                logActivity(`Removed oldest item from library.`);
+                                toDelete--;
+                                cursor.continue();
+                            }
+                        }
+                    }
+                }
+            }
+            function loadLibrary() {
+                const libraryGrid = document.getElementById('library-grid');
+                if (!localDb) return;
+                const transaction = localDb.transaction([STORE_NAME], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const index = store.index('timestamp');
+                const getAllRequest = index.getAll();
+                getAllRequest.onsuccess = () => {
+                    const items = getAllRequest.result.reverse();
+                    libraryGrid.innerHTML = '';
+                    if (items.length === 0) {
+                        libraryGrid.innerHTML = `<p id="library-empty-msg" class="text-gray-500 col-span-full text-center py-10">Your media library is empty. Process some images to see them here.</p>`;
+                    } else {
+                        items.forEach(createLibraryCard);
+                    }
+                };
+            }
+            function clearHistory() {
+                if (!localDb) return;
+                const transaction = localDb.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.clear();
+                request.onsuccess = () => {
+                    logActivity('Media library cleared.');
+                    showMessage('Success', 'Your media library has been cleared.');
+                    loadLibrary();
+                };
+                request.onerror = () => logActivity('Error clearing library.', 'error');
+            }
+
+            // --- UI Updates & Card Creation ---
+            function applyRecommendedSettings() {
+                const formatSelect = document.getElementById('format-select');
+                const qualityControl = document.getElementById('quality-control');
+                const qualitySlider = document.getElementById('quality');
+                const qualityValue = document.getElementById('quality-value');
+                
+                formatSelect.value = 'image/jpeg';
+                qualityControl.classList.remove('hidden');
+                const recommendedQuality = 80;
+                qualitySlider.value = recommendedQuality;
+                qualityValue.textContent = `${recommendedQuality}%`;
+                logActivity(`Applied recommended settings: JPEG at ${recommendedQuality}%.`);
+            }
+            function createImageCard(fileWithId) {
+                const imageGrid = document.getElementById('image-grid');
+                const card = document.createElement('div');
+                card.id = fileWithId.id;
+                card.className = 'image-card bg-white rounded-xl shadow-md p-3 flex flex-col';
+                const originalSizeKB = (fileWithId.originalSize / 1024).toFixed(2);
+                card.innerHTML = ` <img src="${URL.createObjectURL(fileWithId.file)}" alt="${fileWithId.file.name}" class="w-full h-40 object-cover rounded-lg mb-3"> <div class="flex-grow"> <p class="font-semibold text-sm truncate" title="${fileWithId.file.name}">${fileWithId.file.name}</p> <p class="text-xs text-gray-500">Original: <span class="font-medium">${originalSizeKB} KB</span></p> <p class="text-xs text-green-600 font-bold result-info hidden"></p> </div> <div class="progress-container bg-gray-200 rounded-full h-2 mt-3 hidden"><div class="progress-bar bg-indigo-500 h-2 rounded-full" style="width: 0%"></div></div> <button class="download-btn hidden mt-3 w-full bg-green-500 hover:bg-green-600 text-white text-sm font-bold py-1 px-3 rounded-md">Download</button> `;
+                imageGrid.appendChild(card);
+            }
+            function createLibraryCard(item) {
+                const libraryGrid = document.getElementById('library-grid');
+                const card = document.createElement('div');
+                card.className = 'image-card bg-white rounded-xl shadow-md p-3 flex flex-col';
+                const originalSizeKB = (item.originalSize / 1024).toFixed(2);
+                const newSizeKB = (item.newSize / 1024).toFixed(2);
+                const reduction = 100 - (item.newSize / item.originalSize * 100);
+                const imageUrl = URL.createObjectURL(item.blob);
+                card.innerHTML = ` <img src="${imageUrl}" alt="${item.name}" class="w-full h-40 object-cover rounded-lg mb-3"> <div class="flex-grow"> <p class="font-semibold text-sm truncate" title="${item.name}">${item.name}</p> <p class="text-xs text-gray-500">Original: ${originalSizeKB} KB</p> <p class="text-xs text-green-600 font-bold">Processed: ${newSizeKB} KB (${reduction.toFixed(1)}% smaller)</p> </div> <button class="download-btn mt-3 w-full bg-green-500 hover:bg-green-600 text-white text-sm font-bold py-1 px-3 rounded-md">Download</button> `;
+                card.querySelector('.download-btn').onclick = () => {
+                    saveAs(item.blob, `processed-${item.name}`);
+                    logActivity(`Downloaded "${item.name}" from library.`);
+                };
+                libraryGrid.appendChild(card);
+            }
+            function updateCardForResult(card, fileWithId, newBlob, label) {
+                const resultInfo = card.querySelector('.result-info');
+                const downloadBtn = card.querySelector('.download-btn');
+                const imgElement = card.querySelector('img');
+                const newSizeKB = (newBlob.size / 1024).toFixed(2);
+                const reduction = 100 - (newBlob.size / fileWithId.originalSize * 100);
+                resultInfo.innerHTML = `${label}: <b>${newSizeKB} KB</b> (${reduction.toFixed(1)}% smaller)`;
+                resultInfo.classList.remove('hidden');
+                imgElement.src = URL.createObjectURL(newBlob);
+                downloadBtn.classList.remove('hidden');
+                downloadBtn.onclick = () => {
+                    saveAs(newBlob, `processed-${fileWithId.file.name}`);
+                    logActivity(`Downloaded single file: ${fileWithId.file.name}.`);
+                };
+            }
+            async function downloadAll() {
+                const zip = new JSZip();
+                let processedCount = 0;
+                imageFiles.forEach(f => {
+                    if (f.processed && f.processedData) {
+                        zip.file(`processed-${f.file.name}`, f.processedData);
+                        processedCount++;
+                    }
+                });
+                if (processedCount === 0) {
+                    showMessage('No Files', 'Please process some images before downloading.');
+                    return;
+                }
+                logActivity(`Zipping ${processedCount} files...`);
+                downloadAllBtn.textContent = 'Zipping...';
+                downloadAllBtn.disabled = true;
+                try {
+                    const content = await zip.generateAsync({ type: "blob" });
+                    saveAs(content, "optimized-images.zip");
+                    logActivity(`Successfully downloaded ${processedCount} files as a ZIP.`);
+                } catch (error) {
+                    logActivity('Error creating ZIP file.', 'error');
+                    showMessage('Error', 'Could not create the ZIP file.');
+                } finally {
+                    downloadAllBtn.textContent = 'Download All as ZIP';
+                    downloadAllBtn.disabled = false;
+                }
+            }
+            function loadAdminDashboard() {
+                const adminUserList = document.getElementById('admin-user-list');
+                logActivity('Loading admin dashboard...');
+                const users = getUsers();
+                adminUserList.innerHTML = ''; // Clear previous list
+                users.forEach(user => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${user.name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.email}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.credits}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium flex items-center gap-2">
+                            <input type="number" class="w-20 p-1 border rounded-md" placeholder="Add" id="credits-input-${user.email.replace(/[@.]/g, '')}">
+                            <button class="text-indigo-600 hover:text-indigo-900" data-email="${user.email}">Update</button>
+                        </td>
+                    `;
+                    adminUserList.appendChild(tr);
+                });
+            }
+            function switchViewTab(tabName) {
+                const tabWorkspace = document.getElementById('tab-workspace');
+                const tabLibrary = document.getElementById('tab-library');
+                const tabAdmin = document.getElementById('tab-admin');
+                const panelWorkspace = document.getElementById('panel-workspace');
+                const panelLibrary = document.getElementById('panel-library');
+                const panelAdmin = document.getElementById('panel-admin');
+
+                const allTabs = [tabWorkspace, tabLibrary, tabAdmin];
+                const allPanels = [panelWorkspace, panelLibrary, panelAdmin];
+
+                allTabs.forEach(t => t.classList.remove('active'));
+                allPanels.forEach(p => p.classList.add('hidden'));
+
+                if (tabName === 'workspace') {
+                    tabWorkspace.classList.add('active');
+                    panelWorkspace.classList.remove('hidden');
+                } else if (tabName === 'library') {
+                    tabLibrary.classList.add('active');
+                    panelLibrary.classList.remove('hidden');
+                    loadLibrary();
+                } else if (tabName === 'admin') {
+                    tabAdmin.classList.add('active');
+                    panelAdmin.classList.remove('hidden');
+                    loadAdminDashboard();
+                }
+            }
+
+            // --- Initialization of Event Listeners ---
+            document.getElementById('show-signup').addEventListener('click', (e) => {
+                e.preventDefault();
+                document.getElementById('login-form').classList.add('hidden');
+                document.getElementById('signup-form').classList.remove('hidden');
+            });
+
+            document.getElementById('show-login').addEventListener('click', (e) => {
+                e.preventDefault();
+                document.getElementById('signup-form').classList.add('hidden');
+                document.getElementById('login-form').classList.remove('hidden');
+            });
+
+            document.getElementById('signup-btn').addEventListener('click', () => {
+                const name = document.getElementById('signup-name').value;
+                const email = document.getElementById('signup-email').value.toLowerCase();
+                const password = document.getElementById('signup-password').value;
+
+                if (!name || !email || !password) {
+                    showMessage('Error', 'Please fill in all fields.');
+                    return;
+                }
+
+                const users = getUsers();
+                if (users.find(u => u.email === email)) {
+                    showMessage('Sign Up Failed', 'An account with this email already exists.');
+                    return;
+                }
+                
+                if (email === ADMIN_USERNAME) {
+                    showMessage('Sign Up Failed', 'This username is reserved.');
+                    return;
+                }
+
+                const newUser = {
+                    name,
+                    email,
+                    password,
+                    credits: STARTING_CREDITS,
+                    role: 'user'
+                };
+
+                users.push(newUser);
+                saveUsers(users);
+                setCurrentUser(newUser);
+                logActivity(`Account created for ${email}.`);
+            });
+
+            document.getElementById('login-btn').addEventListener('click', () => {
+                const emailOrUsername = document.getElementById('login-email').value.toLowerCase();
+                const password = document.getElementById('login-password').value;
+                
+                if (emailOrUsername === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+                    setCurrentUser({ name: 'fikz1819 (Admin)', email: ADMIN_USERNAME, password: ADMIN_PASSWORD, role: 'admin', credits: Infinity });
+                    return;
+                }
+                
+                const users = getUsers();
+                const user = users.find(u => u.email === emailOrUsername && u.password === password);
+
+                if (user) {
+                    setCurrentUser(user);
+                } else {
+                    showMessage('Login Failed', 'Invalid email or password.');
+                    logActivity(`Login failed for ${emailOrUsername}.`, 'error');
+                }
+            });
+
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                sessionStorage.removeItem('currentUserEmail');
+                currentUser = null;
+                document.getElementById('auth-section').classList.remove('hidden');
+                document.getElementById('app-section').classList.add('hidden');
+                logActivity('User logged out.');
+            });
+
+            document.getElementById('compress-btn').addEventListener('click', () => processImages('compress'));
+            document.getElementById('scale-btn').addEventListener('click', () => processImages('scale'));
+            document.getElementById('recommended-settings-btn').addEventListener('click', applyRecommendedSettings);
+            document.getElementById('download-all-btn').addEventListener('click', downloadAll);
+            document.getElementById('clear-workspace-btn').addEventListener('click', clearWorkspace);
+            document.getElementById('clear-history-btn').addEventListener('click', clearHistory);
+            document.getElementById('modal-close-btn').addEventListener('click', () => document.getElementById('message-modal').classList.add('hidden'));
+
+            document.getElementById('tab-workspace').addEventListener('click', () => switchViewTab('workspace'));
+            document.getElementById('tab-library').addEventListener('click', () => switchViewTab('library'));
+            document.getElementById('tab-admin').addEventListener('click', () => switchViewTab('admin'));
+
+            document.getElementById('admin-user-list').addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    const userEmail = e.target.dataset.email;
+                    const creditsInput = document.getElementById(`credits-input-${userEmail.replace(/[@.]/g, '')}`);
+                    const creditsToAdd = parseInt(creditsInput.value);
+
+                    if (!userEmail || isNaN(creditsToAdd) || creditsToAdd <= 0) {
+                        showMessage('Error', 'Please enter a valid number of credits to add.');
+                        return;
+                    }
+
+                    const users = getUsers();
+                    const userIndex = users.findIndex(u => u.email === userEmail);
+                    if (userIndex !== -1) {
+                        users[userIndex].credits += creditsToAdd;
+                        saveUsers(users);
+                        logActivity(`Updated credits for ${userEmail}.`, 'success');
+                        showMessage('Success', `Successfully added ${creditsToAdd} credits to ${users[userIndex].name}.`);
+                        loadAdminDashboard();
+                        if (currentUser && currentUser.email === userEmail) {
+                            currentUser.credits += creditsToAdd;
+                            updateUserInfo();
+                            updateStatsDashboard();
+                        }
+                    }
+                }
+            });
+            
+            document.getElementById('upload-section').addEventListener('dragover', (e) => { e.preventDefault(); e.currentTarget.querySelector('label').classList.add('border-indigo-500', 'bg-indigo-50'); });
+            document.getElementById('upload-section').addEventListener('dragleave', (e) => { e.preventDefault(); e.currentTarget.querySelector('label').classList.remove('border-indigo-500', 'bg-indigo-50'); });
+            document.getElementById('upload-section').addEventListener('drop', (e) => { e.preventDefault(); e.currentTarget.querySelector('label').classList.remove('border-indigo-500', 'bg-indigo-50'); handleFiles(e.dataTransfer.files); });
+            document.getElementById('image-input').addEventListener('change', (e) => handleFiles(e.target.files));
+
+            document.getElementById('format-select').addEventListener('change', (e) => {
+                document.getElementById('quality-control').classList.toggle('hidden', e.target.value === 'image/png');
+            });
+            document.getElementById('quality').addEventListener('input', (e) => {
+                document.getElementById('quality-value').textContent = `${e.target.value}%`;
+            });
+            
+            document.querySelectorAll('.feature-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.feature-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.feature-panel').forEach(p => p.classList.add('hidden'));
+                    tab.classList.add('active');
+                    document.getElementById(`panel-${tab.dataset.tab}`).classList.remove('hidden');
+                });
+            });
+
+            // Initial check
+            const user = getCurrentUser();
+            if (user) {
+                setCurrentUser(user);
+            } else {
+                document.getElementById('auth-section').classList.remove('hidden');
+                document.getElementById('app-section').classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
